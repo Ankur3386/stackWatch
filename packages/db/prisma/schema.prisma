@@ -11,12 +11,19 @@ datasource db {
   provider = "postgresql"
 }
 
-
+model User{
+id    String @id @default(uuid())
+username  String  @unique 
+password String
+website Website[]
+}
 model Website{
 id String @id @default(uuid())
 url String
+user_id String
 timeAdded DateTime
 ticks WebsiteTick[]
+user User @relation(fields:[user_id],references:[id])
 }
 
 model Region{
@@ -33,6 +40,7 @@ website_id String
 region_id String
 website Website @relation(fields:[website_id],references:[id])
 region Region @relation(fields:[region_id],references:[id])
+createdAt DateTime @default(now())
 
 }
 
@@ -41,17 +49,3 @@ Up
 Down
 Unknown
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-

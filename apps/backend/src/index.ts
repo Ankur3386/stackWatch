@@ -23,5 +23,4 @@ app.get("/status/:websiteId",(req,res)=>{
 
 app.listen(3002,()=>{
 	console.log("app listeningn on port 3002")
-}
-	  )
+})
