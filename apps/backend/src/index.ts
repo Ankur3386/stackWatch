@@ -1,26 +1,12 @@
 import express from "express"
-import {client} from "@repo/db/client"
+import { webSiteRouter } from "./routes/website.route"
+import { authRouter } from "./routes/user.route"
 const app= express()
+import cors from "cors"
+app.use(cors())
 
-app.post("/website",async(req,res)=>{
-
-
-const web= await client.website.create({
-	data:{
-		url: "google.com",
-		timeAdded: '2026-07-09 21:05:00+05:30'
-	}
-})
-
-return res.status(200).json("entry made")
-})
-
-app.get("/status/:websiteId",(req,res)=>{
-
-
-})
-
-
+app.use('/api/v1/user',authRouter)
+app.use('/api/v1/website',webSiteRouter)
 app.listen(3002,()=>{
 	console.log("app listeningn on port 3002")
 })
