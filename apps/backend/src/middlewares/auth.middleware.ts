@@ -5,7 +5,7 @@ export const authmiddleware=async(req:Request,res:Response,next:NextFunction)=>{
 
     const token= req.headers.authorization?.split(' ')[1]
     if(!token){
-          return res.status(500).json("please send token first")
+          return res.status(401).json("please send token first")
     }
 
 try {
@@ -13,6 +13,6 @@ try {
         req.userId= verifiedToken.id   
     next()
 } catch (error) {
-    return res.status(500).json("access not allowed")
+    return res.status(401).json("access not allowed")
 }
 }

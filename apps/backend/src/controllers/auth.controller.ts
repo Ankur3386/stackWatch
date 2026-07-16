@@ -1,10 +1,9 @@
-import {signUpSchema} from "../types/type"
+import {signInSchema, signUpSchema} from "../types/type"
 import bcrypt from "bcrypt"
 import {client} from "@repo/db/client"
 import { NextFunction,Response,Request } from "express"
 
 export const registerUser= async(req:Request,res:Response,next:NextFunction)=>{
-
 try {
         const parsedData = signUpSchema.safeParse(req.body)
         if(!parsedData.success){
@@ -26,4 +25,11 @@ try {
 }
 export const signInUser = async(req:Request,res:Response,next:NextFunction)=>{
 
+const parsedData= signInSchema.safeParse(req.body)
+if(!parsedData.success){
+    return res.status(401).json("send correct cerendentials")
+}
+
+
+    
 }
