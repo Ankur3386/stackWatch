@@ -1,14 +1,14 @@
 import axios from "axios";
 
-export const BACKEND_URL = "http://localhost:3002"
+export const BACKEND_URL = "http://localhost:3002/api/v1"
 export async function createUser():Promise<{id:string,token:string}>{
-    const USER_NAME= Math.random().toString()
-    const signUpUser= await axios.post(`${BACKEND_URL}/sign-up`,{
+    const USER_NAME= 'ankur'+Math.random().toString()
+    const signUpUser= await axios.post(`${BACKEND_URL}/user/sign-up`,{
         username:USER_NAME,
         password:'11111111'
     })
     
-    const signInUser = await axios.post(`${BACKEND_URL}/sign-in`,{
+    const signInUser = await axios.post(`${BACKEND_URL}/user/sign-in`,{
         username:USER_NAME,
         password:'11111111'
     })

@@ -10,6 +10,9 @@ const parsedData= addWebsiteSchema.safeParse(req.body)
 if(!parsedData.success){
 	return res.status(400).json("send correct url")
 }
+if(!req.userId){
+	return  res.status(400).json("send correct token")
+}
 const web= await client.website.create({
 	data:{
 		url: parsedData.data.url,
@@ -21,15 +24,17 @@ const web= await client.website.create({
 return res.status(200).json({id: web.id})
 }
 
-
-const getStatusWebsite=async(req:Request,res:Response,next:NextFunction)=>{
+interface websiteId{
+	websiteId:string
+}
+const getStatusWebsite=async(req:Request<websiteId>,res:Response,next:NextFunction)=>{
 
 	const website= await client.website.findFirst({
 		where:{
 			user_id: req.userId,
 			id:req.params.websiteId
 		},
-		includes:{
+		include:{
 			ticks:{
 				orderBy:[{
 					createdAt: 'desc'
