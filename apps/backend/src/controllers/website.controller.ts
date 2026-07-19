@@ -31,29 +31,8 @@ try {
 }
 }
 
-interface websiteId{
-	websiteId:string
-}
-const getStatusWebsite=async(req:Request<websiteId>,res:Response,next:NextFunction)=>{
 
-	const website= await client.website.findFirst({
-		where:{
-			user_id: req.userId,
-			id:req.params.websiteId
-		},
-		include:{
-			ticks:{
-				orderBy:[{
-					createdAt: 'desc'
-				}],
-				take:1
-			}
-		}
-	})
-	if(!website){
-		return res.status(400).json("website does not exist")
-	}
+const getStatusWebsite=async(req:Request,res:Response,next:NextFunction)=>{
 
-	return res.status(200).json(website)
 
 }
