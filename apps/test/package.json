@@ -5,7 +5,7 @@
   "main": "index.js",
   "type": "commonjs",
   "scripts": {
-    "dev": " npx jest  dist/user.test.js"
+    "dev": "tsc -b && npx jest  dist/website.test.js"
   },
   "devDependencies": {
     "@repo/typescript-config": "workspace:*"

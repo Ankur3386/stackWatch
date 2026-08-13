@@ -9,7 +9,11 @@ describe("testing for website",()=>{
         token =data.token
     })
     test("test fail if user does not give website url ",async()=>{
-        const res = await axios2.post(`${BACKEND_URL}/website`)
+        const res = await axios2.post(`${BACKEND_URL}/website`,{},{
+            headers:{
+                Authorization:`Bearer ${token}`
+            }
+    })
 
         expect(res.status).toBe(400);
 

@@ -10,7 +10,9 @@ export const authmiddleware=async(req:Request,res:Response,next:NextFunction)=>{
 
 try {
         const verifiedToken= jwt.verify(token,process.env.secret as string) as JwtPayload
-        req.userId= verifiedToken.id   
+         console.log("cccccccccccccccccccc",verifiedToken)
+        req.userId= verifiedToken.userId   
+       
     next()
 } catch (error) {
     return res.status(401).json("access not allowed")
