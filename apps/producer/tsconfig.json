@@ -1,0 +1,7 @@
+{
+  "extends": "@repo/typescript-config/base.json",
+  "references": [
+    {"path": "../../packages/db"},
+    {"path": "../../packages/redisstream"}
+  ]
+}
