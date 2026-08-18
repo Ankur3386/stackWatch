@@ -5,15 +5,16 @@
   "main": "index.js",
   "type": "module",
   "scripts": {
-    "dev": "tsx watch index.ts",
+    "build": "tsc -b",
+    "start": "node dist/index.js",
+    "dev": "npm run build && npm run start",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
   "devDependencies": {
-    "@repo/typescript-config": "workspace:*",
-    "tsx": "^4.23.12"
+    "@repo/typescript-config": "workspace:*"
   },
   "dependencies": {
     "@repo/db": "workspace:*",
