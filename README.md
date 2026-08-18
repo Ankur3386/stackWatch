@@ -1,159 +1,422 @@
-# Turborepo starter
+# StackWatch
 
-This Turborepo starter is maintained by the Turborepo core team.
+StackWatch is a website monitoring system inspired by platforms like BetterUptime.
 
-## Using this example
+Users can add websites to StackWatch, and the system periodically checks whether each website is **Up** or **Down**. Every monitoring check records the website's status, response time, monitoring region, and timestamp.
 
-Run the following command:
+The project uses a distributed worker architecture with **Redis Streams**, **PostgreSQL**, **Prisma**, **Node.js**, and **Axios**.
 
-```sh
-npx create-turbo@latest
-```
+---
 
-## What's inside?
+## 🚀 Features
 
-This Turborepo includes the following packages/apps:
+- Add websites for monitoring
+- Periodically check website availability
+- Measure website response time
+- Track website status:
+  - `Up`
+  - `Down`
+  - `Unknown`
+- Store monitoring history in PostgreSQL
+- Redis Streams for distributing monitoring jobs
+- Redis Consumer Groups for worker coordination
+- Concurrent website health checks
+- Support for multiple monitoring regions
+- Multiple workers can process monitoring jobs
+- Store response time and uptime data for each check
 
-### Apps and Packages
+---
 
-- `docs`: a [Next.js](https://nextjs.org/) app
-- `web`: another [Next.js](https://nextjs.org/) app
-- `@repo/ui`: a stub React component library shared by both `web` and `docs` applications
-- `@repo/eslint-config`: `eslint` configurations (includes `eslint-config-next` and `eslint-config-prettier`)
-- `@repo/typescript-config`: `tsconfig.json`s used throughout the monorepo
+## 🏗️ Architecture
 
-Each package/app is 100% [TypeScript](https://www.typescriptlang.org/).
+StackWatch follows a producer-consumer architecture.
 
-### Utilities
+```text
+                         ┌─────────────────┐
+                         │      User       │
+                         │                 │
+                         │  Add Website    │
+                         └────────┬────────┘
+                                  │
+                                  ▼
+                         ┌─────────────────┐
+                         │   PostgreSQL    │
+                         │                 │
+                         │ User            │
+                         │ Website         │
+                         │ Region          │
+                         │ WebsiteTick     │
+                         └────────▲────────┘
+                                  │
+                                  │ Store
+                                  │ monitoring result
+                                  │
+                         ┌────────┴────────┐
+                         │     Worker      │
+                         │                 │
+                         │  Axios Request  │
+                         │  Response Time  │
+                         │  Status Check   │
+                         └────────▲────────┘
+                                  │
+                                  │ Consume
+                                  │
+                         ┌────────┴────────┐
+                         │ Redis Streams   │
+                         │                 │
+                         │ Consumer Group  │
+                         └────────▲────────┘
+                                  │
+                                  │ Produce
+                                  │
+                         ┌────────┴────────┐
+                         │    Producer     │
+                         │                 │
+                         │ Create Monitor  │
+                         │ Events          │
+                         └─────────────────┘
+                         🔄 Monitoring Flow
 
-This Turborepo has some additional tools already setup for you:
+Every monitoring cycle follows this flow:
 
-- [TypeScript](https://www.typescriptlang.org/) for static type checking
-- [ESLint](https://eslint.org/) for code linting
-- [Prettier](https://prettier.io) for code formatting
+1. User adds a website
+          │
+          ▼
+2. Website is stored in PostgreSQL
+          │
+          ▼
+3. Monitoring event is added to Redis Stream
+          │
+          ▼
+4. Worker reads the event
+          │
+          ▼
+5. Worker sends HTTP request using Axios
+          │
+          ├───────────────┐
+          │               │
+        Success          Failure
+          │               │
+          ▼               ▼
+       Status Up       Status Down
+          │               │
+          └───────┬───────┘
+                  ▼
+6. WebsiteTick is created
+   with response time and status
+                  │
+                  ▼
+7. Redis event is acknowledged
+⏱️ Monitoring Interval
 
-### Build
+StackWatch is designed to check monitored websites approximately every 3 minutes.
 
-To build all apps and packages, run the following command:
+Every 3 minutes
+      │
+      ▼
+Create monitoring events
+      │
+      ▼
+Redis Stream
+      │
+      ▼
+Monitoring Workers
+      │
+      ▼
+HTTP health checks
+      │
+      ▼
+Store results in PostgreSQL
 
-With [global `turbo`](https://turborepo.dev/docs/getting-started/installation#global-installation) installed (recommended):
+This allows StackWatch to build a historical record of website availability and response times.
 
-```sh
-cd my-turborepo
-turbo build
-```
+🧰 Tech Stack
+Backend
+Node.js
+TypeScript
+Express
+Database
+PostgreSQL
+Prisma ORM
+Message Queue / Event Streaming
+Redis
+Redis Streams
+Redis Consumer Groups
+Website Monitoring
+Axios
+Development & Infrastructure
+Docker
+Docker Compose
+pnpm
+Turborepo
+📦 Project Structure
+staackwatch/
+│
+├── apps/
+│   │
+│   ├── producer/
+│   │   └── ...
+│   │
+│   └── consumer/
+│       ├── src/
+│       │   └── index.ts
+│       ├── package.json
+│       └── tsconfig.json
+│
+├── packages/
+│   │
+│   ├── db/
+│   │   ├── prisma/
+│   │   │   └── schema.prisma
+│   │   └── ...
+│   │
+│   └── redisstream/
+│       └── ...
+│
+├── docker-compose.yml
+├── package.json
+├── pnpm-workspace.yaml
+└── turbo.json
+🗄️ Database Schema
 
-Without global `turbo`, use your package manager:
+StackWatch uses PostgreSQL with Prisma.
 
-```sh
-cd my-turborepo
-npx turbo build
-pnpm dlx turbo build
-pnpm exec turbo build
-```
+User
 
-You can build a specific package by using a [filter](https://turborepo.dev/docs/crafting-your-repository/running-tasks#using-filters):
+Stores application users.
 
-With [global `turbo`](https://turborepo.dev/docs/getting-started/installation#global-installation) installed:
+User
+├── id
+├── username
+└── password
 
-```sh
-turbo build --filter=docs
-```
+A user can monitor multiple websites.
 
-Without global `turbo`:
+User 1 ──────────── N Website
+Website
 
-```sh
-npx turbo build --filter=docs
-pnpm exec turbo build --filter=docs
-pnpm exec turbo build --filter=docs
-```
+Stores websites that need to be monitored.
 
-### Develop
+Website
+├── id
+├── url
+├── user_id
+└── timeAdded
 
-To develop all apps and packages, run the following command:
+Relationship:
 
-With [global `turbo`](https://turborepo.dev/docs/getting-started/installation#global-installation) installed (recommended):
+User
+  │
+  └─────── 1:N ─────── Website
+Region
 
-```sh
-cd my-turborepo
-turbo dev
-```
+Represents the region from which a website is monitored.
 
-Without global `turbo`, use your package manager:
+Region
+├── id
+└── name
 
-```sh
-cd my-turborepo
-npx turbo dev
-pnpm exec turbo dev
-pnpm exec turbo dev
-```
+Example regions:
 
-You can develop a specific package by using a [filter](https://turborepo.dev/docs/crafting-your-repository/running-tasks#using-filters):
+India
+USA
+Europe
+WebsiteTick
 
-With [global `turbo`](https://turborepo.dev/docs/getting-started/installation#global-installation) installed:
+Stores the result of each website health check.
 
-```sh
-turbo dev --filter=web
-```
+WebsiteTick
+├── id
+├── response_time_ms
+├── status
+├── website_id
+├── region_id
+└── createdAt
 
-Without global `turbo`:
+Example:
 
-```sh
-npx turbo dev --filter=web
-pnpm exec turbo dev --filter=web
-pnpm exec turbo dev --filter=web
-```
+Website:        www.google.com
+Status:         Up
+Response Time:  143ms
+Region:         India
 
-### Remote Caching
+Relationships:
 
-> [!TIP]
-> Vercel Remote Cache is free for all plans. Get started today at [vercel.com](https://vercel.com/signup?utm_source=remote-cache-sdk&utm_campaign=free_remote_cache).
+Website ──────── 1:N ──────── WebsiteTick
 
-Turborepo can use a technique known as [Remote Caching](https://turborepo.dev/docs/core-concepts/remote-caching) to share cache artifacts across machines, enabling you to share build caches with your team and CI/CD pipelines.
 
-By default, Turborepo will cache locally. To enable Remote Caching you will need an account with Vercel. If you don't have an account you can [create one](https://vercel.com/signup?utm_source=turborepo-examples), then enter the following commands:
+Region  ──────── 1:N ──────── WebsiteTick
+📡 Redis Streams
 
-With [global `turbo`](https://turborepo.dev/docs/getting-started/installation#global-installation) installed (recommended):
+Redis Streams are used to distribute monitoring jobs between the producer and workers.
 
-```sh
-cd my-turborepo
-turbo login
-```
+The stream used by the project is:
 
-Without global `turbo`, use your package manager:
+betterUptime:website
 
-```sh
-cd my-turborepo
-npx turbo login
-pnpm exec turbo login
-pnpm exec turbo login
-```
+A monitoring event contains the Website ID and URL:
 
-This will authenticate the Turborepo CLI with your [Vercel account](https://vercel.com/docs/concepts/personal-accounts/overview).
+{
+  "id": "8ab0af05-99a6-41c0-b2c1-efd8cb572075",
+  "url": "www.google.com"
+}
 
-Next, you can link your Turborepo to your Remote Cache by running the following command from the root of your Turborepo:
+The id inside the message is the Website ID stored in PostgreSQL.
 
-With [global `turbo`](https://turborepo.dev/docs/getting-started/installation#global-installation) installed:
+Redis separately generates a Stream Event ID such as:
 
-```sh
-turbo link
-```
+1786707158468-0
 
-Without global `turbo`:
+These are two different IDs.
 
-```sh
-npx turbo link
-pnpm exec turbo link
-pnpm exec turbo link
-```
+Redis Event ID
+      │
+      └── 1786707158468-0
 
-## Useful Links
 
-Learn more about the power of Turborepo:
+Website ID
+      │
+      └── 8ab0af05-99a6-41c0-b2c1-efd8cb572075
+👷 Monitoring Worker
 
-- [Tasks](https://turborepo.dev/docs/crafting-your-repository/running-tasks)
-- [Caching](https://turborepo.dev/docs/crafting-your-repository/caching)
-- [Remote Caching](https://turborepo.dev/docs/core-concepts/remote-caching)
-- [Filtering](https://turborepo.dev/docs/crafting-your-repository/running-tasks#using-filters)
-- [Configuration Options](https://turborepo.dev/docs/reference/configuration)
-- [CLI Usage](https://turborepo.dev/docs/reference/command-line-reference)
+Workers are responsible for performing website health checks.
+
+A worker:
+
+Reads monitoring events from Redis
+Sends an HTTP request to the website
+Measures response time
+Determines whether the website is Up or Down
+Stores the result in PostgreSQL
+Acknowledges the Redis event
+
+Multiple workers can process monitoring events.
+
+                    Redis Stream
+                         │
+             ┌───────────┼───────────┐
+             │           │           │
+             ▼           ▼           ▼
+         Worker 1    Worker 2    Worker 3
+             │           │           │
+             ▼           ▼           ▼
+          Website     Website     Website
+           Checks      Checks      Checks
+
+This allows the monitoring system to scale horizontally.
+
+⚡ Concurrent Website Checks
+
+A worker can receive multiple website monitoring events at once.
+
+Instead of checking websites one by one, the worker processes them concurrently using JavaScript Promises.
+
+For example:
+
+Website 1 ───────────┐
+Website 2 ───────────┤
+Website 3 ───────────┼──► Promise.all()
+Website 4 ───────────┤
+Website 5 ───────────┘
+
+Promise.all() waits for all website checks to complete while allowing the individual asynchronous operations to run concurrently.
+
+This makes the worker more efficient when monitoring multiple websites.
+
+🔐 Environment Variables
+
+The consumer requires a worker ID and monitoring region ID.
+
+WORKER_ID=1
+REGION_ID=<region-id>
+
+Example:
+
+WORKER_ID=1 REGION_ID=<your-region-id> pnpm run dev
+
+The database package uses a PostgreSQL connection string:
+
+DATABASE_URL="postgresql://dev:mypassword@localhost:5432/betterstack"
+
+Never commit real passwords, API keys, or other secrets to GitHub.
+
+🛠️ Getting Started
+1. Clone the Repository
+git clone <your-repository-url>
+cd staackwatch
+2. Install Dependencies
+pnpm install
+3. Start Infrastructure
+
+Start PostgreSQL and Redis using Docker:
+
+docker compose up -d
+
+Check running containers:
+
+docker ps
+4. Configure Environment Variables
+
+Configure the required environment variables.
+
+Example:
+
+DATABASE_URL="postgresql://dev:mypassword@localhost:5432/betterstack"
+
+For the monitoring worker:
+
+WORKER_ID=1
+REGION_ID=<region-id>
+5. Setup Prisma
+
+Run Prisma migrations:
+
+pnpm prisma migrate dev
+
+Generate the Prisma client:
+
+pnpm prisma generate
+6. Create a Monitoring Region
+
+Create a region such as:
+
+India
+
+or:
+
+USA
+
+The generated region ID should then be used as:
+
+REGION_ID=<generated-region-id>
+7. Start the Producer
+
+Start the producer using the appropriate workspace command:
+
+pnpm run dev
+8. Start a Monitoring Worker
+WORKER_ID=1 REGION_ID=<region-id> pnpm run dev
+
+Multiple workers can be started using different worker IDs:
+
+WORKER_ID=1 REGION_ID=<region-id> pnpm run dev
+WORKER_ID=2 REGION_ID=<region-id> pnpm run dev
+📊 Example Monitoring Result
+
+After a successful website check, StackWatch stores a WebsiteTick record:
+
+Website:        www.google.com
+Status:         Up
+Response Time:  143ms
+Region:         India
+Created At:     2026-08-18 12:00:00
+
+If the website is unavailable:
+
+Website:        example.com
+Status:         Down
+Response Time:  5000ms
+Region:         India
+Created At:     2026-08-18 12:03:00
+
+These records can later be used to calculate uptime percentages and display response-time history.
