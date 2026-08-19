@@ -39,7 +39,7 @@ export const getStatusWebsite=async(req:Request<websiteId>,res:Response,next:Nex
 				orderBy:[{
 					createdAt: 'desc'
 				}],
-				take:1
+				take:10 // as 3 min interval so we have 30min of status 
 			}
 		}
 	})
@@ -49,4 +49,17 @@ export const getStatusWebsite=async(req:Request<websiteId>,res:Response,next:Nex
 
 	return res.status(200).json(website)
 
+}
+
+export const getUserWebsite= async(req:Request,res:Response,next:NextFunction)=>{
+	try {
+		const getUserWebsite = await client.website.findMany({
+			where:{
+				user_id: req.userId
+			}
+		})
+		return res.status(200).json(getUserWebsite)
+	} catch (error) {
+		return res.status(400).json("error feetching website")
+	}
 }

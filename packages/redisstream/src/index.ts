@@ -26,7 +26,7 @@ async function  xAdd({id,url}:WebsiteEvent){
 export async function addBulk(websites:WebsiteEvent[]){
 
         for(const website of websites) {
-          console.log("hhhhhhhh",website)
+         
        await  xAdd({id:website.id,url:website.url})
         }
 }
